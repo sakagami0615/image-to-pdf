@@ -6,15 +6,21 @@ from pathlib import Path
 from PIL import Image
 from reportlab.pdfgen import canvas
 
-from .settings import PDF_FIT_PAGE_TO_IMAGE, PDF_INCLUDE_ROOT_FOLDER_NAME, PDF_PAGE_SIZE
+from .settings import PDF_FIT_PAGE_TO_IMAGE, PDF_PAGE_SIZE
 
 
 class PDFConverter:
     """画像をPDFに変換するクラス."""
 
-    def __init__(self):
-        """PDFConverterの初期化."""
-        pass
+    def __init__(self, pdf_fit_page_to_image: bool | None = None):
+        """PDFConverterの初期化.
+
+        Args:
+            pdf_fit_page_to_image: PDFページサイズを画像サイズに合わせるかどうか（省略時はデフォルト値）
+        """
+        self.pdf_fit_page_to_image = (
+            pdf_fit_page_to_image if pdf_fit_page_to_image is not None else PDF_FIT_PAGE_TO_IMAGE
+        )
 
     def convert_images_to_pdf(self, image_paths: list[str], output_path: str, fit_to_page: bool = True) -> None:
         """複数の画像を1つのPDFファイルに変換する.
@@ -52,7 +58,7 @@ class PDFConverter:
                     img_width, img_height = img.size
 
                     # ページサイズを画像に合わせるかどうか
-                    if PDF_FIT_PAGE_TO_IMAGE:
+                    if self.pdf_fit_page_to_image:
                         # 画像サイズに合わせたページサイズ（余白なし）
                         page_width = img_width
                         page_height = img_height
@@ -139,14 +145,16 @@ class PDFConverter:
             if not image_paths:
                 continue
 
-            # PDF名を生成（フォルダ名を使用）
-            folder_parts = Path(folder_name).parts
-            if PDF_INCLUDE_ROOT_FOLDER_NAME:
-                # ルートフォルダ名を含める（全パスを連結）
-                pdf_name = "-".join(folder_parts) + ".pdf"
+            # PDF名を生成
+            # folder_nameが "フォルダパス_other" の形式かチェック
+            if folder_name.endswith("_other"):
+                # 正規表現にマッチした画像がある場合のマッチしない画像グループ
+                # 元のフォルダパスを取得
+                original_folder = folder_name[: -len("_other")]
+                pdf_name = Path(original_folder).name + "_other.pdf"
             else:
-                # 画像フォルダ名のみ使用（最後のパーツのみ）
-                pdf_name = folder_parts[-1] + ".pdf"
+                # folder_nameがそのままフォルダパスの場合、またはグループ名の場合
+                pdf_name = Path(folder_name).name + ".pdf"
 
             # 出力先を決定
             if output_directory:
@@ -155,12 +163,21 @@ class PDFConverter:
                 output_dir.mkdir(parents=True, exist_ok=True)
                 output_path = output_dir / pdf_name
             else:
-                # 画像フォルダと並列に出力（画像ファイルのパスから実際のフォルダを取得）
+                # 画像ファイルのパスから実際のフォルダを取得
                 if image_paths:
                     actual_folder = Path(image_paths[0]).parent
-                    # 親フォルダ（画像フォルダと並列になる場所）に出力
-                    parent_folder = actual_folder.parent
-                    output_path = parent_folder / pdf_name
+
+                    # folder_nameが "_other" で終わる場合は、親フォルダに出力
+                    # それ以外（正規表現にマッチした、またはマッチしない画像のみの場合）は、画像フォルダ内に出力
+                    if folder_name.endswith("_other"):
+                        # 正規表現にマッチしない画像（マッチした画像がある場合）
+                        # 親フォルダ（画像フォルダと並列になる場所）に出力
+                        parent_folder = actual_folder.parent
+                        output_path = parent_folder / pdf_name
+                    else:
+                        # 正規表現にマッチした画像、またはマッチしない画像のみの場合
+                        # 画像フォルダ内に出力
+                        output_path = actual_folder / pdf_name
                 else:
                     # 画像がない場合はスキップ
                     continue

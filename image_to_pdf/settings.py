@@ -3,7 +3,7 @@
 from reportlab.lib.pagesizes import A4
 
 # サポートする画像拡張子
-SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff", ".webp"}
+SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
 
 # PDFページサイズ（デフォルト: A4）
 PDF_PAGE_SIZE = A4
@@ -13,10 +13,9 @@ PDF_PAGE_SIZE = A4
 # False: 固定サイズ（PDF_PAGE_SIZE）に合わせる（余白あり）
 PDF_FIT_PAGE_TO_IMAGE = True
 
-# PDF名に選択したルートフォルダ名を含めるかどうか
-# True: 全パスを含む（例: prj-data-images.pdf）
-# False: 画像フォルダ名のみ（例: images.pdf）
-PDF_INCLUDE_ROOT_FOLDER_NAME = False
+# PDFグループ化パターン（正規表現）
+# 画像ファイル名からPDF名を抽出するための正規表現
+PDF_GROUPING_PATTERN = r"^\d{4}-\d{2}-\d{2}-(?P<name>.+)-\d+\."
 
 # GUIウィンドウサイズ
 WINDOW_WIDTH = 900
@@ -28,6 +27,8 @@ PREVIEW_HEIGHT = 500
 
 # 検索結果コンテナの高さ
 RESULTS_CONTAINER_HEIGHT = 350
+
+TOOL_CONFIG_FILE_PATH = ".tool_config.json"
 
 # ログ設定
 LOG_DIR = "logs"

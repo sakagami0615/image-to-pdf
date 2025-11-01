@@ -6,10 +6,19 @@ from pathlib import Path
 
 import flet as ft
 
+from .config_manager import ConfigManager
 from .image_scanner import ImageScanner
 from .logger import setup_logger
 from .pdf_converter import PDFConverter
-from .settings import PREVIEW_HEIGHT, PREVIEW_WIDTH, RESULTS_CONTAINER_HEIGHT, WINDOW_HEIGHT, WINDOW_WIDTH
+from .settings import (
+    PREVIEW_HEIGHT,
+    PREVIEW_WIDTH,
+    RESULTS_CONTAINER_HEIGHT,
+    TOOL_CONFIG_FILE_PATH,
+    WINDOW_HEIGHT,
+    WINDOW_WIDTH,
+)
+from .settings_dialog import SettingsDialog
 
 
 class ImageToPDFApp:
@@ -29,8 +38,16 @@ class ImageToPDFApp:
         # ロガーをセットアップ
         self.logger = setup_logger()
 
-        self.scanner = ImageScanner()
-        self.converter = PDFConverter()
+        # 設定マネージャーを初期化
+        self.config_manager = ConfigManager(TOOL_CONFIG_FILE_PATH)
+
+        # 設定を反映してスキャナーとコンバーターを初期化
+        self.scanner = ImageScanner(
+            self.config_manager.get_supported_extensions(),
+            self.config_manager.get_pdf_grouping_pattern(),
+            self.config_manager.get_enabled_pdf_grouping_patterns(),
+        )
+        self.converter = PDFConverter(self.config_manager.get_pdf_fit_page_to_image())
 
         self.selected_folder = ""
         self.scan_results: dict[str, list[str]] = {}
@@ -62,6 +79,12 @@ class ImageToPDFApp:
             icon=ft.Icons.CLEAR,
             on_click=self._clear_clicked,
             disabled=True,
+        )
+
+        self.settings_button = ft.IconButton(
+            icon=ft.Icons.SETTINGS,
+            tooltip="設定",
+            on_click=self._settings_clicked,
         )
 
         self.results_container = ft.Column(
@@ -119,7 +142,14 @@ class ImageToPDFApp:
             ft.Container(
                 content=ft.Column(
                     [
-                        ft.Text("Image to PDF Converter", size=24, weight=ft.FontWeight.BOLD),
+                        ft.Row(
+                            [
+                                ft.Text("Image to PDF Converter", size=24, weight=ft.FontWeight.BOLD),
+                                ft.Container(expand=True),
+                                self.settings_button,
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
                         ft.Divider(),
                         ft.Row(
                             [
@@ -185,25 +215,31 @@ class ImageToPDFApp:
         try:
             self.logger.info(f"画像検索開始: {folder_path}")
             self.selected_folder = folder_path
-            self.scan_results = self.scanner.scan_directory(folder_path)
+            scan_results_raw = self.scanner.scan_directory(folder_path)
 
-            if not self.scan_results:
+            if not scan_results_raw:
                 self.logger.warning("画像ファイルが見つかりませんでした")
                 self._show_error("画像ファイルが見つかりませんでした")
                 return
 
-            # すべてのフォルダを選択状態にする
+            # グループ化パターンが設定されている場合は、画像をグループ化して表示
+            self.scan_results = {}
+            for folder_path_key, image_paths in scan_results_raw.items():
+                folder_groups = self.scanner.group_images_by_pattern(folder_path_key, image_paths)
+                self.scan_results.update(folder_groups)
+
+            # すべてのグループを選択状態にする
             self.folder_selection = dict.fromkeys(self.scan_results.keys(), True)
-            # すべてのフォルダを展開状態にする
+            # すべてのグループを展開状態にする
             self.folder_expanded = dict.fromkeys(self.scan_results.keys(), False)
 
             self._display_results()
             self.results_section.visible = True
             self.convert_button.disabled = False
             self.clear_button.disabled = False
-            self.status_text.value = f"{len(self.scan_results)}個のフォルダに画像が見つかりました"
+            self.status_text.value = f"{len(self.scan_results)}個のPDFグループに画像が見つかりました"
             self.status_text.color = ft.Colors.GREEN
-            self.logger.info(f"画像検索完了: {len(self.scan_results)}個のフォルダ")
+            self.logger.info(f"画像検索完了: {len(self.scan_results)}個のPDFグループ")
             self.page.update()
 
         except Exception as ex:
@@ -229,6 +265,28 @@ class ImageToPDFApp:
         self.progress_bar.visible = False
         self.page.update()
 
+    def _settings_clicked(self, e) -> None:
+        """設定ボタンのクリックイベント.
+
+        Args:
+            e: イベントオブジェクト
+        """
+
+        def on_settings_changed():
+            """設定が変更された時の処理."""
+            # スキャナーとコンバーターを再初期化
+            self.scanner = ImageScanner(
+                self.config_manager.get_supported_extensions(),
+                self.config_manager.get_pdf_grouping_pattern(),
+                self.config_manager.get_enabled_pdf_grouping_patterns(),
+            )
+            self.converter = PDFConverter(self.config_manager.get_pdf_fit_page_to_image())
+            self.logger.info("設定が更新されました")
+
+        # 設定ダイアログを表示
+        dialog = SettingsDialog(self.page, self.config_manager, on_settings_changed)
+        dialog.show()
+
     def _display_results(self) -> None:
         """検索結果を表示する."""
         self.results_container.controls.clear()
@@ -243,13 +301,20 @@ class ImageToPDFApp:
         """フォルダアイテムを作成する.
 
         Args:
-            folder_path: フォルダパス
+            folder_path: フォルダパス（またはグループ名）
             image_paths: 画像パスのリスト
 
         Returns:
             フォルダアイテムのExpansionTile
         """
-        pdf_name = self.scanner.get_pdf_name(folder_path, self.selected_folder)
+        # PDF名を生成（pdf_converter.pyと同じロジック）
+        if folder_path.endswith("_other"):
+            # 正規表現にマッチした画像がある場合のマッチしない画像グループ
+            original_folder = folder_path[: -len("_other")]
+            pdf_name = Path(original_folder).name + "_other.pdf"
+        else:
+            # folder_pathがそのままフォルダパスの場合、またはグループ名の場合
+            pdf_name = Path(folder_path).name + ".pdf"
 
         def checkbox_changed(e):
             self.folder_selection[folder_path] = e.control.value
@@ -272,7 +337,8 @@ class ImageToPDFApp:
                         image_paths[idx - 1],
                         image_paths[idx],
                     )
-                    self.scanner.reorder_images(folder_path, image_paths)
+                    # scan_resultsを直接更新（グループ化されているため）
+                    self.scan_results[folder_path] = image_paths
                     self.last_moved_image = image_path  # 移動した画像を記録
                     self._display_results()
                     self.logger.info(f"画像並び替え: {idx} -> {idx - 1}")
@@ -293,7 +359,8 @@ class ImageToPDFApp:
                         image_paths[idx + 1],
                         image_paths[idx],
                     )
-                    self.scanner.reorder_images(folder_path, image_paths)
+                    # scan_resultsを直接更新（グループ化されているため）
+                    self.scan_results[folder_path] = image_paths
                     self.last_moved_image = image_path  # 移動した画像を記録
                     self._display_results()
                     self.logger.info(f"画像並び替え: {idx} -> {idx + 1}")
@@ -382,10 +449,20 @@ class ImageToPDFApp:
             on_change=checkbox_changed,
         )
 
-        # PDF出力先を取得（画像フォルダの親フォルダ）
+        # PDF出力先を取得
         if image_paths:
             actual_folder = Path(image_paths[0]).parent
-            pdf_output_folder = str(actual_folder.parent)
+
+            # folder_pathが "_other" で終わる場合は、親フォルダに出力
+            # それ以外（正規表現にマッチした、またはマッチしない画像のみの場合）は、画像フォルダ内に出力
+            if folder_path.endswith("_other"):
+                # 正規表現にマッチしない画像（マッチした画像がある場合）
+                # 親フォルダに出力
+                pdf_output_folder = str(actual_folder.parent)
+            else:
+                # 正規表現にマッチした画像、またはマッチしない画像のみの場合
+                # 画像フォルダ内に出力
+                pdf_output_folder = str(actual_folder)
         else:
             pdf_output_folder = folder_path
 
@@ -409,9 +486,9 @@ class ImageToPDFApp:
         Args:
             e: イベントオブジェクト
         """
-        # 選択されたフォルダのみを変換対象とする
+        # 選択されたグループのみを変換対象とする（すでにグループ化済み）
         selected_groups = {
-            folder: images for folder, images in self.scan_results.items() if self.folder_selection.get(folder, True)
+            group: images for group, images in self.scan_results.items() if self.folder_selection.get(group, True)
         }
 
         if not selected_groups:

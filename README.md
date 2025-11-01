@@ -73,14 +73,23 @@ poetry run python build_exe.py
 - 初回ビルド時は特に時間がかかります
 - 生成されたEXEファイルは単一ファイルで、他のPCでも実行可能です（Pythonのインストール不要）
 
+## テスト
+
+プロジェクトには単体テストが含まれています。
+
+```bash
+# テストを実行
+poetry run pytest
+
+# カバレッジレポート付きでテストを実行
+poetry run pytest --cov=image_to_pdf --cov-report=term-missing
+```
+
 ## 使用ライブラリ
 
 - **Flet**: モダンなUIフレームワーク
 - **PyInstaller**: EXEファイル作成
 - **Pillow**: 画像処理
 - **ReportLab**: PDF生成
-
-## コーディング規約
-
-- PEP8に準拠
-- GoogleスタイルのDocstring使用
+- **pytest**: テストフレームワーク（開発用）
+- **pytest-cov**: カバレッジレポート（開発用）

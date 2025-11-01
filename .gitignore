@@ -234,3 +234,4 @@ build/
 dist/
 .data/
 .claude/
+.tool_config.json

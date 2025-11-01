@@ -42,9 +42,28 @@ select = [
 ]
 ignore = [
     "E501",  # 行の長さ制限を無視（flake8と合わせるなら無効）
+    "S603", 
+    "S607", 
 ]
 
 # import順の自動整形用（isort相当）
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-single-line = false
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
+pytest-cov = "^7.0.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+]
+# カバレッジを取得する場合は手動で実行:
+# poetry run pytest --cov=image_to_pdf --cov-report=term-missing
+
