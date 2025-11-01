@@ -1,0 +1,50 @@
+[project]
+name = "image-to-pdf"
+version = "0.1.0"
+description = "複数枚の画像をPDFファイルに変換するアプリ"
+authors = [
+    {name = "sakagami0615",email = "sakagami0615@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    "flet (>=0.28.3,<0.29.0)",
+    "pillow (>=12.0.0,<13.0.0)",
+    "reportlab (>=4.4.4,<5.0.0)",
+    "ruff (>=0.14.3,<0.15.0)",
+    "pyinstaller (>=6.16.0,<7.0.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+line-length = 119
+indent-width = 4
+
+# フォーマッター設定（blackと同じ整形ルールを適用）
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "I",   # isort (import order)
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (セキュリティ)
+]
+ignore = [
+    "E501",  # 行の長さ制限を無視（flake8と合わせるなら無効）
+]
+
+# import順の自動整形用（isort相当）
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-single-line = false
