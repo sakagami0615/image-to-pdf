@@ -60,13 +60,13 @@ class PDFConverter:
                     # ページサイズを画像に合わせるかどうか
                     if self.pdf_fit_page_to_image:
                         # 画像サイズに合わせたページサイズ（余白なし）
-                        page_width = img_width
-                        page_height = img_height
+                        page_width: float = float(img_width)
+                        page_height: float = float(img_height)
                         c.setPageSize((page_width, page_height))
-                        draw_width = img_width
-                        draw_height = img_height
-                        x = 0
-                        y = 0
+                        draw_width: float = float(img_width)
+                        draw_height: float = float(img_height)
+                        x: float = 0
+                        y: float = 0
                     else:
                         # 固定ページサイズに合わせる
                         page_width, page_height = PDF_PAGE_SIZE
@@ -90,9 +90,9 @@ class PDFConverter:
                             y = (page_height - draw_height) / 2
                         else:
                             # 元のサイズで配置（ポイント単位）
-                            draw_width = img_width
-                            draw_height = img_height
-                            x = 0
+                            draw_width = float(img_width)
+                            draw_height = float(img_height)
+                            x = 0.0
                             y = page_height - draw_height
 
                     # 画像をPDFに描画
