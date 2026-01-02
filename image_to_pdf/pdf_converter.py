@@ -117,7 +117,7 @@ class PDFConverter:
     def batch_convert(
         self,
         image_groups: dict,
-        output_directory: str = None,
+        output_directory: str | None = None,
         progress_callback=None,
         delete_images: bool = True,
     ) -> list[str]:

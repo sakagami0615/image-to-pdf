@@ -1,8 +1,10 @@
 """設定を管理するモジュール."""
 
+import builtins
+import copy
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .settings import PDF_FIT_PAGE_TO_IMAGE, PDF_GROUPING_PATTERN, SUPPORTED_IMAGE_EXTENSIONS
 
@@ -51,10 +53,10 @@ class ConfigManager:
                         self.config[key] = value
             except Exception:
                 # 設定ファイルの読み込みに失敗した場合はデフォルト値を使用
-                self.config = self.DEFAULT_CONFIG.copy()
+                self.config = copy.deepcopy(self.DEFAULT_CONFIG)
         else:
             # 設定ファイルが存在しない場合はデフォルト値を使用
-            self.config = self.DEFAULT_CONFIG.copy()
+            self.config = copy.deepcopy(self.DEFAULT_CONFIG)
 
     def _migrate_old_format(self) -> None:
         """旧形式の設定を新形式に移行する."""
@@ -76,7 +78,7 @@ class ConfigManager:
                 ]
             else:
                 # パターンがない場合はデフォルトを使用
-                self.config["pdf_grouping_patterns"] = self.DEFAULT_CONFIG["pdf_grouping_patterns"].copy()
+                self.config["pdf_grouping_patterns"] = copy.deepcopy(self.DEFAULT_CONFIG["pdf_grouping_patterns"])
 
     def save_config(self) -> None:
         """設定ファイルを保存する."""
@@ -110,15 +112,15 @@ class ConfigManager:
         """
         self.config[key] = value
 
-    def get_supported_extensions(self) -> set:
+    def get_supported_extensions(self) -> builtins.set[str]:
         """サポートする画像拡張子を取得する.
 
         Returns:
             画像拡張子のセット
         """
-        return set(self.config.get("supported_extensions", self.DEFAULT_CONFIG["supported_extensions"]))
+        return builtins.set(self.config.get("supported_extensions", self.DEFAULT_CONFIG["supported_extensions"]))
 
-    def set_supported_extensions(self, extensions: set) -> None:
+    def set_supported_extensions(self, extensions: builtins.set[str]) -> None:
         """サポートする画像拡張子を設定する.
 
         Args:
@@ -132,7 +134,7 @@ class ConfigManager:
         Returns:
             True: 画像サイズに合わせる、False: 固定サイズ
         """
-        return self.config.get("pdf_fit_page_to_image", self.DEFAULT_CONFIG["pdf_fit_page_to_image"])
+        return cast(bool, self.config.get("pdf_fit_page_to_image", self.DEFAULT_CONFIG["pdf_fit_page_to_image"]))
 
     def set_pdf_fit_page_to_image(self, fit: bool) -> None:
         """PDFページサイズを画像サイズに合わせるかどうかを設定する.
@@ -152,7 +154,7 @@ class ConfigManager:
         patterns = self.get_pdf_grouping_patterns()
         enabled_patterns = [p for p in patterns if p.get("enabled", False)]
         if enabled_patterns:
-            return enabled_patterns[0]["pattern"]
+            return cast(str, enabled_patterns[0]["pattern"])
         # 有効なパターンがない場合は空文字列を返す
         return ""
 
@@ -174,15 +176,18 @@ class ConfigManager:
         """
         self.config["pdf_grouping_pattern"] = pattern
 
-    def get_pdf_grouping_patterns(self) -> list[dict]:
+    def get_pdf_grouping_patterns(self) -> list[dict[str, Any]]:
         """PDFグループ化パターンのリストを取得する.
 
         Returns:
             パターン情報の辞書リスト
         """
-        return self.config.get("pdf_grouping_patterns", self.DEFAULT_CONFIG["pdf_grouping_patterns"])
+        return cast(
+            list[dict[str, Any]],
+            self.config.get("pdf_grouping_patterns", self.DEFAULT_CONFIG["pdf_grouping_patterns"]),
+        )
 
-    def set_pdf_grouping_patterns(self, patterns: list[dict]) -> None:
+    def set_pdf_grouping_patterns(self, patterns: list[dict[str, Any]]) -> None:
         """PDFグループ化パターンのリストを設定する.
 
         Args:
@@ -221,7 +226,12 @@ class ConfigManager:
         return pattern_id
 
     def update_pdf_grouping_pattern(
-        self, pattern_id: str, label: str = None, pattern: str = None, description: str = None, enabled: bool = None
+        self,
+        pattern_id: str,
+        label: str | None = None,
+        pattern: str | None = None,
+        description: str | None = None,
+        enabled: bool | None = None,
     ) -> bool:
         """PDFグループ化パターンを更新する.
 
@@ -275,4 +285,4 @@ class ConfigManager:
 
     def reset_to_defaults(self) -> None:
         """設定をデフォルト値にリセットする."""
-        self.config = self.DEFAULT_CONFIG.copy()
+        self.config = copy.deepcopy(self.DEFAULT_CONFIG)

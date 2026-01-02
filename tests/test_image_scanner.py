@@ -1,7 +1,5 @@
 """ImageScannerのテスト."""
 
-import pytest
-
 from image_to_pdf.image_scanner import ImageScanner
 
 
@@ -10,9 +8,7 @@ class TestImageScanner:
 
     def test_group_by_single_pattern(self):
         """単一パターンでのグループ化テスト."""
-        scanner = ImageScanner(
-            grouping_pattern=r"^(?P<name>.+)-\d+\."
-        )
+        scanner = ImageScanner(grouping_pattern=r"^(?P<name>.+)-\d+\.")
 
         folder_path = "test_folder"
         image_paths = [
@@ -193,9 +189,7 @@ class TestImageScanner:
 
     def test_backward_compatibility_single_pattern(self):
         """後方互換性：単一パターン（grouping_pattern）が動作することをテスト."""
-        scanner = ImageScanner(
-            grouping_pattern=r"^(?P<name>.+)-\d+\."
-        )
+        scanner = ImageScanner(grouping_pattern=r"^(?P<name>.+)-\d+\.")
 
         folder_path = "test_folder"
         image_paths = [
@@ -215,7 +209,7 @@ class TestImageScanner:
             grouping_pattern=r"^OLD-(?P<name>.+)-\d+\.",  # 使われない
             grouping_patterns=[
                 r"^NEW-(?P<name>.+)-\d+\.",  # こちらが使われる
-            ]
+            ],
         )
 
         folder_path = "test_folder"

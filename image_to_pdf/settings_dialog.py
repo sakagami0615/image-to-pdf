@@ -1,6 +1,7 @@
 """設定ダイアログモジュール."""
 
 import copy
+from typing import Any
 
 import flet as ft
 
@@ -30,9 +31,9 @@ class SettingsDialog:
         self.grouping_pattern_field = None  # グループ化パターン入力フィールド（旧形式、非推奨）
         self.patterns_list_view = None  # パターンリストビュー
         self.patterns_list_container = None  # パターンリストコンテナ
-        self.dialog = None
-        self.extensions = []  # 現在の拡張子リスト
-        self.patterns = []  # 現在のパターンリスト
+        self.dialog: ft.AlertDialog | None = None
+        self.extensions: list[str] = []  # 現在の拡張子リスト
+        self.patterns: list[dict[str, Any]] = []  # 現在のパターンリスト
 
     def show(self) -> None:
         """設定ダイアログを表示する."""
@@ -532,7 +533,7 @@ class SettingsDialog:
         self._update_patterns_list()
         self.page.update()
 
-    def _show_pattern_edit_dialog(self, pattern: dict = None):
+    def _show_pattern_edit_dialog(self, pattern: dict[str, Any] | None = None):
         """パターン追加・編集ダイアログを表示する.
 
         Args:
@@ -545,14 +546,14 @@ class SettingsDialog:
         # 入力フィールド
         label_field = ft.TextField(
             label="ラベル",
-            value=pattern.get("label", "") if is_edit else "",
+            value=pattern.get("label", "") if pattern is not None else "",
             hint_text="例: 日付形式パターン",
             width=500,
         )
 
         pattern_field = ft.TextField(
             label="正規表現パターン",
-            value=pattern.get("pattern", "") if is_edit else "",
+            value=pattern.get("pattern", "") if pattern is not None else "",
             hint_text=r"例: ^(?P<name>[^_]+)_.*",
             width=500,
             multiline=False,
@@ -560,7 +561,7 @@ class SettingsDialog:
 
         description_field = ft.TextField(
             label="説明",
-            value=pattern.get("description", "") if is_edit else "",
+            value=pattern.get("description", "") if pattern is not None else "",
             hint_text="例: アンダースコアで区切られた最初の部分をPDF名として使用",
             width=500,
             multiline=True,
@@ -570,7 +571,7 @@ class SettingsDialog:
 
         enabled_checkbox = ft.Checkbox(
             label="有効にする",
-            value=pattern.get("enabled", True) if is_edit else True,
+            value=pattern.get("enabled", True) if pattern is not None else True,
         )
 
         def close_pattern_dialog(e):

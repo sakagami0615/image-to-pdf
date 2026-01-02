@@ -527,7 +527,9 @@ class ImageToPDFApp:
             # output_directoryにNoneを渡すことで、各画像フォルダに出力
             # 画像削除フラグを渡す
             delete_images = self.delete_images_checkbox.value
-            created_pdfs = self.converter.batch_convert(image_groups, None, progress_callback, delete_images)
+            created_pdfs = self.converter.batch_convert(
+                image_groups, output_directory=None, progress_callback=progress_callback, delete_images=delete_images
+            )
 
             self.status_text.value = f"変換完了: {len(created_pdfs)}個のPDFを作成しました"
             self.status_text.color = ft.Colors.GREEN
