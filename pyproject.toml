@@ -1,6 +1,6 @@
 [project]
 name = "image-to-pdf"
-version = "0.1.0"
+version = "0.1.1"
 description = "複数枚の画像をPDFファイルに変換するアプリ"
 authors = [
     {name = "sakagami0615",email = "sakagami0615@gmail.com"}
