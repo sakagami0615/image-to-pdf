@@ -34,7 +34,7 @@ class ImageScanner:
             grouping_pattern: PDFグループ化パターン（正規表現、省略時はNone、後方互換性のため残す）
             grouping_patterns: PDFグループ化パターンのリスト（優先順位順、省略時はNone）
         """
-        self.scan_results = {}
+        self.scan_results: dict[str, list[str]] = {}
         # サポートする画像拡張子
         self.supported_extensions = supported_extensions if supported_extensions else SUPPORTED_IMAGE_EXTENSIONS
         # PDFグループ化パターン（後方互換性のため残す）
@@ -181,7 +181,7 @@ class ImageScanner:
         Returns:
             グループ名をキー、画像パスのリストを値とする辞書
         """
-        groups = {}
+        groups: dict[str, list[str]] = {}
         pattern = re.compile(pattern_str)
         has_matched = False  # 正規表現にマッチした画像があるかのフラグ
 
@@ -231,9 +231,9 @@ class ImageScanner:
         Returns:
             グループ名をキー、画像パスのリストを値とする辞書
         """
-        groups = {}
+        groups: dict[str, list[str]] = {}
         has_matched = False  # どれかのパターンにマッチした画像があるかのフラグ
-        unmatched_images = []  # どのパターンにもマッチしなかった画像
+        unmatched_images: list[str] = []  # どのパターンにもマッチしなかった画像
 
         # 各画像について、優先順位順にパターンを試す
         for image_path in image_paths:

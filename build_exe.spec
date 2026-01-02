@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['run.py'],
+    ['image_to_pdf/__main__.py'],
     pathex=[],
     binaries=[],
     datas=[],
